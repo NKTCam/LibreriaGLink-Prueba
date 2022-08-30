@@ -1,0 +1,132 @@
+{% extends "layout.html.twig" %}
+
+{% block content %}
+
+<div class="container text-center">
+    <div class="row" style="margin-top:5%;">
+            <div class="col">
+                <h1>Buscador de libros</h1>
+            </div>
+    </div>
+</div>
+<div class="container">
+    <div class="row" style="margin-top:5%;">
+            <div class="col">
+                <b><h3>Categorías</h3></b>
+                 <select id="categoria" onchange="categoriaLibro()">
+                 <option selected disabled>Seleccione una opción</option>
+                 {% for datos in categoria%}
+                 <option value="{{datos.category_id}}"> {{datos.name}}</option>
+                 {% endfor %}
+                 </select>
+            </div>
+    </div>
+</div>
+<div class="container">
+  <div class="row" id="listaLibros" style="margin-top:5%;">
+
+  </div>
+</div>
+<div id="LibroModal" class="modal fade" role="dialog">
+  <div class="modal-dialog modal-md">
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 id="titulo-modal" class="modal-title"></h4>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+            <div id="cover" class="col-6"></div>
+            <div style ="text-align:justify; font:arial; size: 12px;"id="content_short" class="col-6"></div>
+        </div>
+        <div class="row">
+            <div  class="col-6">
+            <br>
+            <p style="text-align:left;"id="publisher_date"></p>
+            <p style="text-align:left;paddin: 2px;"id="author"></p>
+            <p style="text-align:left;"id="language"></p>
+            <p style="text-align:left;paddin: 2px;"id="pages"></p>
+            
+            </div>
+            <div  class="col-6">
+                <p style="text-align:left;"id="categorias"><b>Categorias:</b><p id="categories"></p></p>
+                <p style="text-align:left;paddin: 2px;"><b>Tags:</b><p style="overflow-wrap: break-word"id="tags"></p></p>
+            </div>
+        </div>
+        <p id="p-msg"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btn-close" class="btn boton-procede-pago" onclick="$('#LibroModal').modal('hide');">Aceptar</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block javascript %}
+    <script type="text/javascript">
+        function categoriaLibro()
+        {
+            var select = document.getElementById('categoria');
+             var id_categoria = select.options[select.selectedIndex].value;
+            console.log(id_categoria);
+            var ajax=$.ajax({ url: 'http://www.etnassoft.com/api/v1/get/?category_id='+id_categoria+'&results_range=0,10', type:"POST", dataType:"json", data: "",})
+            .done(function(data) {
+                $('#listaLibros').empty();
+                 var inicio = '<div class="card"  style=" margin-top: 2%">';
+                  var end = '</div></div>';   
+                for(var i=0; i<data.length-1; i++)
+                {   
+                    $('#listaLibros').append('<div class="col-3" onclick="crearModal('+data[i].ID+')"}>'
+                        +inicio+'<img id="imagen" name="imagen" src="'+data[i].cover+'" class="card-img-top" alt="...">'+end);
+                }        
+            });
+        }
+        
+        function crearModal(id_title) {
+        console.log(id_title);
+        let categorias=[];
+        let etiqueta=[];
+        $(document).ready(function () {
+                var request = $.ajax({
+                    url: 'http://www.etnassoft.com/api/v1/get/?id='+id_title,
+                    type:"POST",
+                    dataType:"json",
+                    data: "",
+                }).done(function(data) {
+                    $("#titulo-modal").html(data[0].title);
+                    
+                    $("#cover").html('<img id="imagen" name="imagen" src="'+data[0].cover+'" class="card-img-top" alt="...">');
+                    $("#content_short").html(data[0].content_short);
+                    $("#LibroModal").modal("show");
+                    $("#publisher_date").html("<b>Fecha de publicacion: </b>"+data[0].publisher_date);
+                    $("#language").html("<b>Lenguaje: </b>"+data[0].language);
+                     $("#pages").html("<b>Paginas: </b>"+data[0].pages);
+                    $("#author").html("<b>Autor: </b>"+data[0].author)
+                    let i=0;
+                    $('#categories').empty();
+                    $('#tags').empty();
+                    while(i<data[0].categories.length)
+                    {
+                        categorias.push(data[0].categories[i].name);
+                        i++;
+                    }
+                  
+                 
+                    for(let i=0;i <data[0].tags.length; i++)
+                    {
+                        etiqueta.push(data[0].tags[i].name);
+                        
+                    }
+                    document.getElementById("tags").innerHTML = etiqueta;
+                      document.getElementById("categories").innerHTML = categorias;
+                });
+              
+                request.done(function(msg) {
+                    console.log( msg );
+                }); 
+            });         
+        }
+
+        
+    </script>
+{% endblock %}
